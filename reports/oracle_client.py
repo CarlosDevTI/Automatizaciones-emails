@@ -1,6 +1,6 @@
 ﻿import logging
 from decimal import Decimal
-from typing import Any
+from typing import Any, Sequence
 
 from django.conf import settings
 
@@ -43,6 +43,19 @@ def _to_decimal(value: Any) -> Decimal:
     return Decimal(str(value))
 
 
+def _row_to_record(row: Sequence[Any]) -> dict[str, Any] | None:
+    branch_code = int(row[0]) if row and row[0] is not None else None
+    if branch_code is None:
+        return None
+
+    return {
+        "branch_code": branch_code,
+        "branch_name": BRANCH_CATALOG.get(branch_code, f"Sucursal {branch_code}"),
+        "current_amount": _to_decimal(row[1] if len(row) > 1 else None),
+        "previous_amount": _to_decimal(row[2] if len(row) > 2 else None),
+    }
+
+
 def fetch_daily_placements() -> list[dict[str, Any]]:
     if oracledb is None:
         raise OracleClientError("No se pudo importar oracledb.")
@@ -58,17 +71,9 @@ def fetch_daily_placements() -> list[dict[str, Any]]:
 
                 try:
                     for row in result_cursor:
-                        branch_code = int(row[0]) if row[0] is not None else None
-                        if branch_code is None:
-                            continue
-
-                        records.append(
-                            {
-                                "branch_code": branch_code,
-                                "branch_name": BRANCH_CATALOG.get(branch_code, f"Sucursal {branch_code}"),
-                                "amount": _to_decimal(row[1]),
-                            }
-                        )
+                        record = _row_to_record(row)
+                        if record is not None:
+                            records.append(record)
                 finally:
                     if result_cursor is not None:
                         try:

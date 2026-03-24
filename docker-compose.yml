@@ -5,4 +5,4 @@
       - .env
     volumes:
       - .:/app
-    command: python manage.py send_daily_reports --dry-run --preview-dir data/previews
+    command: python manage.py send_daily_reports --dry-run

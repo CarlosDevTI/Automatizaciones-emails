@@ -10,8 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--date", dest="report_date", help="Fecha del reporte en formato YYYY-MM-DD")
-        parser.add_argument("--dry-run", action="store_true", help="Genera el reporte sin enviar correos")
-        parser.add_argument("--preview-dir", dest="preview_dir", help="Guarda HTML de ejemplo en la carpeta indicada")
+        parser.add_argument("--dry-run", action="store_true", help="Consulta Oracle y valida el render sin enviar correos")
 
     def handle(self, *args, **options):
         report_date = None
@@ -24,16 +23,16 @@ class Command(BaseCommand):
         summary = run_daily_report(
             report_date=report_date,
             dry_run=options["dry_run"],
-            preview_dir=options["preview_dir"],
         )
 
+        mode = "dry-run" if summary.dry_run else "envio"
         self.stdout.write(
             self.style.SUCCESS(
-                "Reporte procesado | fecha=%s | enviados=%s | previews=%s | sucursales=%s | omitidas=%s"
+                "Reporte procesado | modo=%s | fecha=%s | enviados=%s | sucursales=%s | omitidas=%s"
                 % (
+                    mode,
                     summary.report_date,
                     summary.sent_messages,
-                    summary.generated_previews,
                     summary.branch_messages,
                     summary.skipped_branches,
                 )

@@ -1,6 +1,6 @@
 ﻿# Colocacion Diaria
 
-Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, calcular metricas por sucursal y enviar correos HTML automatizados a sucursales y gerencia.
+Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, calcular metricas mensuales por sucursal y enviar correos HTML automatizados a sucursales y gerencia.
 
 ## Arquitectura
 
@@ -13,7 +13,6 @@ Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, calcular
 │   └── wsgi.py
 ├── reports/
 │   ├── oracle_client.py
-│   ├── history_store.py
 │   ├── data_processor.py
 │   ├── charts.py
 │   ├── email_builder.py
@@ -29,19 +28,31 @@ Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, calcular
 └── requirements.txt
 ```
 
+## Contrato del procedimiento
+
+El sistema espera que `SP_CONSULTADIARIACOLOCACION` retorne exactamente estas columnas:
+
+- `K_SUCURS`
+- `MONTO_MES_ACTUAL`
+- `MONTO_MES_ANTERIOR`
+
+La variacion porcentual se calcula en la aplicacion con:
+
+```text
+((MONTO_MES_ACTUAL - MONTO_MES_ANTERIOR) / MONTO_MES_ANTERIOR) * 100
+```
+
+Si `MONTO_MES_ANTERIOR <= 0`, la variacion se muestra como `0.00%` en estado neutral.
+
 ## Modulos clave
 
-- `reports/oracle_client.py`: abre la conexion Oracle con `with`, ejecuta el SP y cierra explicitamente el cursor REF.
-- `reports/data_processor.py`: calcula monto del dia, ranking, participacion y variacion porcentual.
-- `reports/history_store.py`: guarda el snapshot diario en SQLite mediante Django ORM y recupera el comparativo del mes anterior.
-- `reports/charts.py`: genera dona por sucursal y barras consolidadas en base64.
-- `reports/email_builder.py`: construye el HTML inline compatible con correo.
+- `reports/oracle_client.py`: abre la conexion Oracle con `with`, ejecuta el SP y mapea las tres columnas del resultado.
+- `reports/data_processor.py`: calcula monto actual, monto anterior, variacion, ranking, participacion y resumen de red.
+- `reports/charts.py`: genera PNG livianos para comparativo por sucursal y consolidado de red.
+- `reports/email_builder.py`: arma un solo sistema de render para los correos usando templates reutilizables y `CID inline`.
 - `reports/mailer.py`: envia HTML usando el backend SMTP de Django.
 - `reports/management/commands/send_daily_reports.py`: comando orquestador listo para cron.
-
-## Regla de comparacion mensual
-
-La comparacion se hace contra el mismo dia calendario del mes anterior. Si no existe snapshot para ese dia, el sistema toma la ultima fecha disponible del mes anterior. Esa regla es una inferencia tecnica necesaria porque el SP entregado solo retorna el valor del dia.
+- `reports/history_store.py`: queda fuera del runtime diario y pendiente de limpieza futura.
 
 ## Configuracion local
 
@@ -67,24 +78,22 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-El repositorio ya queda con un `.env` local armado en desarrollo. Antes de subir a produccion, ajuste `SMTP_*`, `DEFAULT_FROM_EMAIL`, `MANAGEMENT_RECIPIENTS` y `BRANCH_RECIPIENTS_JSON` con los correos reales.
-
-3. Ejecutar migraciones del historico local.
+3. Ejecutar migraciones locales.
 
 ```bash
 python manage.py migrate
 ```
 
-4. Probar calculos unitarios.
+4. Probar calculos y render.
 
 ```bash
 python manage.py test reports.tests
 ```
 
-5. Generar previews HTML sin enviar correo.
+5. Validar flujo completo sin enviar correo.
 
 ```bash
-python manage.py send_daily_reports --dry-run --preview-dir data/previews
+python manage.py send_daily_reports --dry-run
 ```
 
 6. Ejecutar envio real.
@@ -100,7 +109,7 @@ Construccion y prueba:
 ```bash
 docker compose build
 docker compose run --rm app python manage.py migrate
-docker compose run --rm app python manage.py send_daily_reports --dry-run --preview-dir data/previews
+docker compose run --rm app python manage.py send_daily_reports --dry-run
 ```
 
 Para envio real:
@@ -134,21 +143,10 @@ crontab deploy/colocacion_diaria.cron
 crontab -l
 ```
 
-## Git
-
-El directorio original no estaba inicializado en Git. Los comandos base para subirlo quedan asi:
-
-```bash
-git init
-git add .
-git commit -m "feat: django oracle daily placement reports"
-```
-
-Luego se agrega el remoto corporativo y se hace `git push` con las credenciales del repositorio destino.
-
 ## Notas operativas
 
-- El logo corporativo se toma desde `assets/logo.png` y se incrusta en base64 si existe.
+- El logo corporativo se toma desde `assets/logo.png` y se adjunta inline por `CID`.
+- Las graficas se generan como PNG livianos con ancho compatible para email.
 - Los destinatarios por sucursal se configuran en `BRANCH_RECIPIENTS_JSON`.
-- El historico queda en `data/db.sqlite3` y no se versiona.
-- Los scripts legacy en la raiz fueron retirados. El flujo soportado para produccion es el de Django.
+- El historico local queda sin uso en el envio diario y se mantiene solo por compatibilidad temporal.
+- El flujo soportado es `send_daily_reports` con `--dry-run` o envio real; no se generan previews HTML a disco.

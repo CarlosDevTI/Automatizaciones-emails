@@ -1,0 +1,11 @@
+﻿<tr>
+  <td style="padding:24px;background-color:#eaf3fb;border-bottom:1px solid #d6e3ef;">
+    {% if logo_available %}
+    <img src="cid:{{ logo_cid }}" alt="Logo" width="140" style="display:block;width:140px;max-width:140px;height:auto;margin:0 0 14px 0;border:0;outline:none;text-decoration:none;">
+    {% else %}
+    <div style="font-size:22px;font-weight:700;color:#17324d;margin-bottom:14px;">ConGente</div>
+    {% endif %}
+    <div style="font-size:28px;line-height:1.2;font-weight:700;color:#17324d;">{{ title }}</div>
+    <div style="font-size:14px;line-height:1.5;color:#4f6478;margin-top:6px;">{{ subtitle }} | Corte {{ report_date }}</div>
+  </td>
+</tr>

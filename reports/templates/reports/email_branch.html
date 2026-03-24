@@ -1,45 +1,18 @@
-﻿<!DOCTYPE html>
-<html lang="es">
-  <body style="margin:0;padding:0;background-color:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#16324f;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#eef3f8;padding:24px 0;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="680" cellspacing="0" cellpadding="0" style="max-width:680px;width:100%;background-color:#ffffff;border-radius:18px;overflow:hidden;">
-            <tr>
-              <td style="background:#1f5f96;padding:28px 32px;color:#ffffff;">
-                {% if logo_available %}
-                <img src="cid:{{ logo_cid }}" alt="Logo" style="max-height:54px;display:block;margin-bottom:16px;">
-                {% else %}
-                <div style="font-size:20px;font-weight:700;margin-bottom:16px;">ConGente</div>
-                {% endif %}
-                <div style="font-size:28px;font-weight:700;line-height:1.2;">{{ title }}</div>
-                <div style="font-size:14px;opacity:0.9;margin-top:6px;">Agencia {{ branch_name }} | Corte {{ report_date }}</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:32px;">
-                <div style="background-color:#f4f8fb;border:1px solid #d9e7f2;border-radius:16px;padding:22px 24px;margin-bottom:20px;">
-                  <div style="font-size:13px;color:#5b7288;margin-bottom:6px;">Monto del dia</div>
-                  <div style="font-size:38px;font-weight:700;color:#16324f;line-height:1.1;">{{ amount }}</div>
-                </div>
+﻿{% extends "reports/base_report.html" %}
 
-                <div style="background-color:#f9fbfd;border:1px solid #d9e7f2;border-radius:16px;padding:20px;margin-bottom:20px;text-align:center;">
-                  <img src="cid:{{ chart_cid }}" alt="Grafica de sucursal" style="max-width:320px;width:100%;display:block;margin:0 auto;">
-                </div>
+{% block content %}
+<div style="font-size:15px;line-height:1.6;color:#4f6478;margin-bottom:16px;">Resumen del comportamiento del periodo actual frente al mismo periodo del mes anterior.</div>
 
-                <div style="background-color:#f4f8fb;border-left:6px solid {{ result_color }};border-radius:14px;padding:20px 22px;">
-                  <div style="font-size:18px;font-weight:700;color:{{ result_color }};margin-bottom:8px;">{{ result_title }}</div>
-                  <div style="font-size:15px;line-height:1.6;color:#16324f;">{{ result_message }}</div>
-                  <div style="font-size:12px;color:#5b7288;margin-top:10px;">Base comparativa: {{ comparison_date }}</div>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:18px 32px;background-color:#f4f8fb;color:#5b7288;font-size:12px;">Desarrollado por Gerencia TI</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
+{% include "reports/components/metric_card.html" with label="Monto del periodo actual" value=current_amount note="Monto del periodo anterior: "|add:previous_amount tone="primary" %}
+{% include "reports/components/metric_card.html" with label="Variacion porcentual" value=variation note="Comparativo calculado desde el procedimiento almacenado" tone="default" %}
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 16px 0;">
+  <tr>
+    <td style="background-color:#ffffff;border:1px solid #dce5ee;border-radius:14px;padding:16px;">
+      <img src="cid:{{ chart_cid }}" alt="Grafica comparativa de la sucursal" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">
+    </td>
+  </tr>
+</table>
+
+{% include "reports/components/result_message.html" %}
+{% endblock %}

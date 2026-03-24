@@ -1,0 +1,18 @@
+﻿<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:10px 0 0 0;">
+  <tr>
+    {% for item in top_three %}
+    <td valign="top" style="width:33.33%;padding:{% if forloop.first %}0 8px 0 0{% elif forloop.last %}0 0 0 8px{% else %}0 4px{% endif %};">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="background-color:#f7fafc;border:1px solid #dce5ee;border-radius:14px;padding:16px 14px;">
+            <div style="font-size:22px;line-height:1;margin-bottom:10px;">{{ item.medal_html|safe }}</div>
+            <div style="font-size:17px;line-height:1.35;font-weight:700;color:#17324d;">{{ item.branch_name }}</div>
+            <div style="font-size:20px;line-height:1.25;font-weight:700;color:#2563a6;margin-top:8px;">{{ item.current_amount }}</div>
+            <div style="font-size:13px;line-height:1.5;color:{{ item.variation_color }};font-weight:700;margin-top:8px;">{{ item.variation }}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+    {% endfor %}
+  </tr>
+</table>

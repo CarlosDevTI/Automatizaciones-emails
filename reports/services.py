@@ -1,16 +1,12 @@
-﻿import base64
-import logging
+﻿import logging
 from dataclasses import dataclass
 from datetime import date
-from pathlib import Path
 
 from django.conf import settings
 from django.utils import timezone
 
-from reports.charts import generate_branch_donut_chart, generate_management_bar_chart
-from reports.data_processor import normalize_records, build_branch_performance
+from reports.data_processor import build_branch_performance, normalize_records
 from reports.email_builder import build_branch_email, build_management_email
-from reports.history_store import get_previous_month_snapshot, save_daily_snapshot
 from reports.mailer import open_email_connection, send_html_email
 from reports.oracle_client import fetch_daily_placements
 
@@ -21,10 +17,10 @@ logger = logging.getLogger(__name__)
 class ReportExecutionSummary:
     report_date: date
     sent_messages: int
-    generated_previews: int
     branch_messages: int
     skipped_branches: int
     management_sent: bool
+    dry_run: bool
 
 
 @dataclass(frozen=True)
@@ -33,7 +29,6 @@ class EmailPayload:
     recipients: list[str]
     html: str
     inline_images: list
-    preview_name: str
 
 
 def _normalize_recipients(raw_value) -> list[str]:
@@ -44,51 +39,35 @@ def _normalize_recipients(raw_value) -> list[str]:
     return [str(email).strip() for email in raw_value if str(email).strip()]
 
 
-def _preview_html_from_payload(payload: EmailPayload) -> str:
-    preview_html = payload.html
-    for image in payload.inline_images:
-        encoded = base64.b64encode(image.content).decode("utf-8")
-        preview_html = preview_html.replace(f"cid:{image.cid}", f"data:{image.mimetype};base64,{encoded}")
-    return preview_html
+def _get_chart_builders():
+    from reports.charts import generate_branch_comparison_chart, generate_management_bar_chart
+
+    return generate_branch_comparison_chart, generate_management_bar_chart
 
 
-def _write_preview(preview_root: Path, payload: EmailPayload) -> None:
-    preview_root.mkdir(parents=True, exist_ok=True)
-    (preview_root / payload.preview_name).write_text(_preview_html_from_payload(payload), encoding="utf-8")
+def run_daily_report(report_date: date | None = None, dry_run: bool = False) -> ReportExecutionSummary:
+    generate_branch_comparison_chart, generate_management_bar_chart = _get_chart_builders()
 
-
-def run_daily_report(report_date: date | None = None, dry_run: bool = False, preview_dir: str | None = None) -> ReportExecutionSummary:
     target_date = report_date or timezone.localdate()
     raw_records = fetch_daily_placements()
     normalized_records = normalize_records(raw_records)
     if not normalized_records:
         raise RuntimeError("Oracle no retorno registros para el reporte diario.")
 
-    previous_snapshot = get_previous_month_snapshot(target_date)
-    branches, total_amount = build_branch_performance(normalized_records, previous_snapshot.amounts)
-
-    if not dry_run:
-        save_daily_snapshot(branches, target_date)
-
-    preview_root = Path(preview_dir) if preview_dir else None
-    generated_previews = 0
+    branches, summary = build_branch_performance(normalized_records)
     skipped_branches = 0
 
-    management_chart_b64 = generate_management_bar_chart(branches)
     management_render = build_management_email(
         branches=branches,
-        total_amount=total_amount,
+        summary=summary,
         report_date=target_date,
-        comparison_date=previous_snapshot.snapshot_date,
-        bar_chart_b64=management_chart_b64,
+        chart_png=generate_management_bar_chart(branches),
     )
-
     management_payload = EmailPayload(
         subject=f"Colocacion diaria consolidada - {target_date:%Y-%m-%d}",
         recipients=_normalize_recipients(settings.MANAGEMENT_RECIPIENTS),
         html=management_render.html,
         inline_images=management_render.inline_images,
-        preview_name="management_report.html",
     )
 
     branch_payloads: list[EmailPayload] = []
@@ -102,36 +81,30 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
         branch_render = build_branch_email(
             branch=branch,
             report_date=target_date,
-            comparison_date=previous_snapshot.snapshot_date,
-            donut_chart_b64=generate_branch_donut_chart(branch, total_amount),
+            chart_png=generate_branch_comparison_chart(branch),
         )
-        safe_name = branch.branch_name.lower().replace(" ", "_")
         branch_payloads.append(
             EmailPayload(
                 subject=f"Colocacion diaria - {branch.branch_name} - {target_date:%Y-%m-%d}",
                 recipients=recipients,
                 html=branch_render.html,
                 inline_images=branch_render.inline_images,
-                preview_name=f"branch_{branch.branch_code}_{safe_name}.html",
             )
         )
 
-    if preview_root:
-        _write_preview(preview_root, management_payload)
-        generated_previews += 1
-        for payload in branch_payloads:
-            _write_preview(preview_root, payload)
-            generated_previews += 1
-
     if dry_run:
-        logger.info("Dry run activo. No se enviaran correos.")
+        logger.info(
+            "Dry run activo. Render completado para %s correo(s) de sucursal y %s correo gerencial.",
+            len(branch_payloads),
+            1 if management_payload.recipients else 0,
+        )
         return ReportExecutionSummary(
             report_date=target_date,
             sent_messages=0,
-            generated_previews=generated_previews,
             branch_messages=len(branch_payloads),
             skipped_branches=skipped_branches,
             management_sent=False,
+            dry_run=True,
         )
 
     sent_messages = 0
@@ -165,8 +138,8 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
     return ReportExecutionSummary(
         report_date=target_date,
         sent_messages=sent_messages,
-        generated_previews=generated_previews,
         branch_messages=len(branch_payloads),
         skipped_branches=skipped_branches,
         management_sent=management_sent,
+        dry_run=False,
     )
