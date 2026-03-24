@@ -48,7 +48,6 @@ def fetch_daily_placements() -> list[dict[str, Any]]:
         raise OracleClientError("No se pudo importar oracledb.")
 
     records: list[dict[str, Any]] = []
-    result_cursor = None
 
     try:
         with _get_oracle_connection() as conn:
@@ -57,24 +56,28 @@ def fetch_daily_placements() -> list[dict[str, Any]]:
                 cursor.callproc("SP_CONSULTADIARIACOLOCACION", [ref_cursor_out])
                 result_cursor = ref_cursor_out.getvalue()
 
-                for row in result_cursor:
-                    branch_code = int(row[0]) if row[0] is not None else None
-                    if branch_code is None:
-                        continue
+                try:
+                    for row in result_cursor:
+                        branch_code = int(row[0]) if row[0] is not None else None
+                        if branch_code is None:
+                            continue
 
-                    records.append(
-                        {
-                            "branch_code": branch_code,
-                            "branch_name": BRANCH_CATALOG.get(branch_code, f"Sucursal {branch_code}"),
-                            "amount": _to_decimal(row[1]),
-                        }
-                    )
+                        records.append(
+                            {
+                                "branch_code": branch_code,
+                                "branch_name": BRANCH_CATALOG.get(branch_code, f"Sucursal {branch_code}"),
+                                "amount": _to_decimal(row[1]),
+                            }
+                        )
+                finally:
+                    if result_cursor is not None:
+                        try:
+                            result_cursor.close()
+                        except Exception:
+                            logger.warning("No fue posible cerrar el REF CURSOR de Oracle de forma limpia.")
     except Exception as exc:  # pragma: no cover
         logger.exception("Error consultando Oracle")
         raise OracleClientError(str(exc)) from exc
-    finally:
-        if result_cursor is not None:
-            result_cursor.close()
 
     logger.info("Oracle retorno %s registros", len(records))
     return records

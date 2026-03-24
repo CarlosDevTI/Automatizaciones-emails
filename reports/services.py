@@ -1,4 +1,5 @@
-﻿import logging
+﻿import base64
+import logging
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -7,7 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from reports.charts import generate_branch_donut_chart, generate_management_bar_chart
-from reports.data_processor import build_branch_performance, normalize_records
+from reports.data_processor import normalize_records, build_branch_performance
 from reports.email_builder import build_branch_email, build_management_email
 from reports.history_store import get_previous_month_snapshot, save_daily_snapshot
 from reports.mailer import open_email_connection, send_html_email
@@ -31,6 +32,7 @@ class EmailPayload:
     subject: str
     recipients: list[str]
     html: str
+    inline_images: list
     preview_name: str
 
 
@@ -42,9 +44,17 @@ def _normalize_recipients(raw_value) -> list[str]:
     return [str(email).strip() for email in raw_value if str(email).strip()]
 
 
-def _write_preview(preview_root: Path, file_name: str, html: str) -> None:
+def _preview_html_from_payload(payload: EmailPayload) -> str:
+    preview_html = payload.html
+    for image in payload.inline_images:
+        encoded = base64.b64encode(image.content).decode("utf-8")
+        preview_html = preview_html.replace(f"cid:{image.cid}", f"data:{image.mimetype};base64,{encoded}")
+    return preview_html
+
+
+def _write_preview(preview_root: Path, payload: EmailPayload) -> None:
     preview_root.mkdir(parents=True, exist_ok=True)
-    (preview_root / file_name).write_text(html, encoding="utf-8")
+    (preview_root / payload.preview_name).write_text(_preview_html_from_payload(payload), encoding="utf-8")
 
 
 def run_daily_report(report_date: date | None = None, dry_run: bool = False, preview_dir: str | None = None) -> ReportExecutionSummary:
@@ -65,7 +75,7 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
     skipped_branches = 0
 
     management_chart_b64 = generate_management_bar_chart(branches)
-    management_html = build_management_email(
+    management_render = build_management_email(
         branches=branches,
         total_amount=total_amount,
         report_date=target_date,
@@ -76,7 +86,8 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
     management_payload = EmailPayload(
         subject=f"Colocacion diaria consolidada - {target_date:%Y-%m-%d}",
         recipients=_normalize_recipients(settings.MANAGEMENT_RECIPIENTS),
-        html=management_html,
+        html=management_render.html,
+        inline_images=management_render.inline_images,
         preview_name="management_report.html",
     )
 
@@ -88,10 +99,8 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
             logger.info("Sucursal %s omitida por no tener destinatarios configurados", branch.branch_code)
             continue
 
-        branch_html = build_branch_email(
+        branch_render = build_branch_email(
             branch=branch,
-            branches=branches,
-            total_amount=total_amount,
             report_date=target_date,
             comparison_date=previous_snapshot.snapshot_date,
             donut_chart_b64=generate_branch_donut_chart(branch, total_amount),
@@ -101,16 +110,17 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
             EmailPayload(
                 subject=f"Colocacion diaria - {branch.branch_name} - {target_date:%Y-%m-%d}",
                 recipients=recipients,
-                html=branch_html,
+                html=branch_render.html,
+                inline_images=branch_render.inline_images,
                 preview_name=f"branch_{branch.branch_code}_{safe_name}.html",
             )
         )
 
     if preview_root:
-        _write_preview(preview_root, management_payload.preview_name, management_payload.html)
+        _write_preview(preview_root, management_payload)
         generated_previews += 1
         for payload in branch_payloads:
-            _write_preview(preview_root, payload.preview_name, payload.html)
+            _write_preview(preview_root, payload)
             generated_previews += 1
 
     if dry_run:
@@ -130,13 +140,25 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False, pre
     try:
         connection.open()
         if management_payload.recipients:
-            sent_messages += send_html_email(connection, management_payload.subject, management_payload.html, management_payload.recipients)
+            sent_messages += send_html_email(
+                connection,
+                management_payload.subject,
+                management_payload.html,
+                management_payload.recipients,
+                inline_images=management_payload.inline_images,
+            )
             management_sent = True
         else:
             logger.warning("No hay destinatarios configurados para gerencia.")
 
         for payload in branch_payloads:
-            sent_messages += send_html_email(connection, payload.subject, payload.html, payload.recipients)
+            sent_messages += send_html_email(
+                connection,
+                payload.subject,
+                payload.html,
+                payload.recipients,
+                inline_images=payload.inline_images,
+            )
     finally:
         connection.close()
 
