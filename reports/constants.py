@@ -1,0 +1,32 @@
+﻿BRANCH_CATALOG = {
+    101: "Principal",
+    102: "Popular",
+    103: "Acacias",
+    104: "Porfía",
+    105: "Montecarlo",
+    106: "Granada",
+    107: "Guayabetal",
+    108: "Catama",
+    109: "Barranca de Upía",
+    110: "Puerto Gaitán",
+    111: "Cabuyaro",
+    112: "Vista Hermosa",
+    203: "CB Cubarral",
+    204: "CB Puerto Rico",
+    205: "CB Lejanías",
+    206: "CB Cumaral",
+    207: "CB Villanueva",
+    208: "CB Tauramena",
+    209: "CB Yopal",
+    210: "CB Puerto López",
+    211: "CB Mesetas",
+    212: "CB Uribe",
+    213: "CB El Castillo",
+    214: "CB Puerto Lleras",
+}
+
+TOP_MEDALS = {
+    1: "&#129351;",
+    2: "&#129352;",
+    3: "&#129353;",
+}

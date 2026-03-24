@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <body style="margin:0;padding:0;background-color:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#16324f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#eef3f8;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="760" cellspacing="0" cellpadding="0" style="max-width:760px;width:100%;background-color:#ffffff;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="background:linear-gradient(135deg,#16324f 0%,#1f6aa5 100%);padding:28px 32px;color:#ffffff;">
+                {% if logo_data_uri %}
+                <img src="{{ logo_data_uri }}" alt="Logo" style="max-height:52px;display:block;margin-bottom:16px;">
+                {% endif %}
+                <div style="font-size:24px;font-weight:700;">{{ title }}</div>
+                <div style="font-size:14px;opacity:0.9;">Reporte por sucursal | Fecha {{ report_date }}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <div style="font-size:28px;font-weight:700;margin-bottom:8px;">{{ branch_name }}</div>
+                <div style="font-size:14px;color:#5b7288;margin-bottom:24px;">Comparativo contra {{ comparison_date }}</div>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td valign="top" style="padding-right:16px;">
+                      <div style="background-color:#f4f8fb;border:1px solid #d9e7f2;border-radius:16px;padding:20px;margin-bottom:16px;">
+                        <div style="font-size:13px;color:#5b7288;margin-bottom:6px;">Monto del dia</div>
+                        <div style="font-size:34px;font-weight:700;color:#16324f;">{{ amount }}</div>
+                      </div>
+                      <div style="background-color:#f4f8fb;border:1px solid #d9e7f2;border-radius:16px;padding:20px;">
+                        <div style="font-size:14px;margin-bottom:8px;">Variacion vs. mes anterior</div>
+                        <div style="font-size:24px;font-weight:700;color:{{ variation_color }};">{{ variation }}</div>
+                        <div style="font-size:13px;color:#5b7288;margin-top:6px;">Base de comparacion: {{ previous_amount }}</div>
+                      </div>
+                    </td>
+                    <td valign="top" style="width:250px;">
+                      <div style="background-color:#f4f8fb;border:1px solid #d9e7f2;border-radius:16px;padding:20px;text-align:center;">
+                        <img src="data:image/png;base64,{{ donut_chart_b64 }}" alt="Grafica dona" style="max-width:210px;width:100%;display:block;margin:0 auto 12px;">
+                        <div style="font-size:14px;color:#5b7288;">Participacion en la red</div>
+                        <div style="font-size:28px;font-weight:700;color:#16324f;">{{ participation }}</div>
+                        <div style="font-size:13px;color:#5b7288;margin-top:4px;">Total de la red: {{ network_total }}</div>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18px;">
+                  <tr>
+                    <td style="background-color:#16324f;border-radius:16px;padding:18px 20px;color:#ffffff;">
+                      <div style="font-size:13px;opacity:0.9;">Ranking en la red</div>
+                      <div style="font-size:32px;font-weight:700;">#{{ rank }} / {{ total_branches }}</div>
+                    </td>
+                    <td style="width:16px;"></td>
+                    <td style="background-color:#f7fafc;border:1px solid #d9e7f2;border-radius:16px;padding:18px 20px;">
+                      <div style="font-size:13px;color:#5b7288;margin-bottom:4px;">Mensaje de desempeno</div>
+                      <div style="font-size:15px;line-height:1.5;color:#16324f;">{{ motivational_message }}</div>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="margin-top:28px;font-size:18px;font-weight:700;color:#16324f;">Ranking general</div>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:12px;border-collapse:collapse;">
+                  <tr>
+                    <th align="left" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Pos.</th>
+                    <th align="left" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Sucursal</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Monto</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Variacion</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Participacion</th>
+                  </tr>
+                  {% for row in ranking_rows %}
+                  <tr{% if row.highlighted %} style="background-color:#edf5fb;"{% endif %}>
+                    <td style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;font-weight:700;">{{ row.rank }} {% if row.medal_html %}<span>{{ row.medal_html|safe }}</span>{% endif %}</td>
+                    <td style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.branch_name }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.amount }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;color:{{ row.variation_color }};font-weight:700;">{{ row.variation }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.participation }}</td>
+                  </tr>
+                  {% endfor %}
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px;background-color:#f4f8fb;color:#5b7288;font-size:12px;">Desarrollado por Gerencia TI</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

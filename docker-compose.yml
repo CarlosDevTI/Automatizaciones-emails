@@ -1,0 +1,8 @@
+﻿services:
+  app:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    command: python manage.py send_daily_reports --dry-run --preview-dir data/previews

@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <body style="margin:0;padding:0;background-color:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#16324f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#eef3f8;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="820" cellspacing="0" cellpadding="0" style="max-width:820px;width:100%;background-color:#ffffff;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="background:linear-gradient(135deg,#16324f 0%,#1f6aa5 100%);padding:28px 32px;color:#ffffff;">
+                {% if logo_data_uri %}
+                <img src="{{ logo_data_uri }}" alt="Logo" style="max-height:52px;display:block;margin-bottom:16px;">
+                {% endif %}
+                <div style="font-size:24px;font-weight:700;">{{ title }}</div>
+                <div style="font-size:14px;opacity:0.9;">Reporte consolidado gerencial | Fecha {{ report_date }}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="background-color:#f4f8fb;border:1px solid #d9e7f2;border-radius:16px;padding:20px;">
+                      <div style="font-size:13px;color:#5b7288;margin-bottom:6px;">Total general de la red</div>
+                      <div style="font-size:34px;font-weight:700;color:#16324f;">{{ network_total }}</div>
+                      <div style="font-size:13px;color:#5b7288;margin-top:6px;">Comparativo base: {{ comparison_date }}</div>
+                    </td>
+                    <td style="width:16px;"></td>
+                    <td style="background-color:#16324f;border-radius:16px;padding:20px;color:#ffffff;">
+                      <div style="font-size:13px;opacity:0.9;">Sucursales incluidas</div>
+                      <div style="font-size:34px;font-weight:700;">{{ branch_count }}</div>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="margin-top:28px;font-size:18px;font-weight:700;color:#16324f;">Top 3 del dia</div>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:12px;">
+                  <tr>
+                    {% for item in top_three %}
+                    <td valign="top" style="background-color:#f7fafc;border:1px solid #d9e7f2;border-radius:16px;padding:18px 16px;width:33.33%;">
+                      <div style="font-size:24px;margin-bottom:10px;">{{ item.medal_html|safe }}</div>
+                      <div style="font-size:18px;font-weight:700;color:#16324f;">{{ item.branch_name }}</div>
+                      <div style="font-size:22px;font-weight:700;margin-top:8px;color:#1f6aa5;">{{ item.amount }}</div>
+                      <div style="font-size:14px;margin-top:8px;color:{{ item.variation_color }};font-weight:700;">{{ item.variation }}</div>
+                    </td>
+                    {% if not forloop.last %}<td style="width:12px;"></td>{% endif %}
+                    {% endfor %}
+                  </tr>
+                </table>
+
+                <div style="margin-top:28px;font-size:18px;font-weight:700;color:#16324f;">Grafica consolidada</div>
+                <div style="background-color:#f7fafc;border:1px solid #d9e7f2;border-radius:16px;padding:18px;margin-top:12px;">
+                  <img src="data:image/png;base64,{{ bar_chart_b64 }}" alt="Grafica de barras" style="width:100%;display:block;">
+                </div>
+
+                <div style="margin-top:28px;font-size:18px;font-weight:700;color:#16324f;">Ranking completo</div>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:12px;border-collapse:collapse;">
+                  <tr>
+                    <th align="left" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Pos.</th>
+                    <th align="left" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Sucursal</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Monto</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Mes anterior</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Variacion</th>
+                    <th align="right" style="padding:10px;border-bottom:1px solid #d9e7f2;font-size:12px;color:#5b7288;">Participacion</th>
+                  </tr>
+                  {% for row in ranking_rows %}
+                  <tr>
+                    <td style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;font-weight:700;">{{ row.rank }} {% if row.medal_html %}<span>{{ row.medal_html|safe }}</span>{% endif %}</td>
+                    <td style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.branch_name }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.amount }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.previous_amount }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;color:{{ row.variation_color }};font-weight:700;">{{ row.variation }}</td>
+                    <td align="right" style="padding:12px 10px;border-bottom:1px solid #eef3f8;font-size:14px;">{{ row.participation }}</td>
+                  </tr>
+                  {% endfor %}
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px;background-color:#f4f8fb;color:#5b7288;font-size:12px;">Desarrollado por Gerencia TI</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
