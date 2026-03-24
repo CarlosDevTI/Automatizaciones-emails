@@ -67,6 +67,8 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
+El repositorio ya queda con un `.env` local armado en desarrollo. Antes de subir a produccion, ajuste `SMTP_*`, `DEFAULT_FROM_EMAIL`, `MANAGEMENT_RECIPIENTS` y `BRANCH_RECIPIENTS_JSON` con los correos reales.
+
 3. Ejecutar migraciones del historico local.
 
 ```bash
@@ -121,6 +123,17 @@ Opcion Docker:
 0 8 * * * cd /opt/colocacion_diaria && docker compose run --rm app ./scripts/run_daily_reports.sh >> /opt/colocacion_diaria/logs/cron.log 2>&1
 ```
 
+Archivo listo para instalar:
+
+- `deploy/colocacion_diaria.cron`
+
+Para cargarlo en el servidor:
+
+```bash
+crontab deploy/colocacion_diaria.cron
+crontab -l
+```
+
 ## Git
 
 El directorio original no estaba inicializado en Git. Los comandos base para subirlo quedan asi:
@@ -138,4 +151,4 @@ Luego se agrega el remoto corporativo y se hace `git push` con las credenciales 
 - El logo corporativo se toma desde `assets/logo.png` y se incrusta en base64 si existe.
 - Los destinatarios por sucursal se configuran en `BRANCH_RECIPIENTS_JSON`.
 - El historico queda en `data/db.sqlite3` y no se versiona.
-- El proyecto mantiene los scripts legacy existentes, pero el flujo soportado para produccion es el de Django.
+- Los scripts legacy en la raiz fueron retirados. El flujo soportado para produccion es el de Django.

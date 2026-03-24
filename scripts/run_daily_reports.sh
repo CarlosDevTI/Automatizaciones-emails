@@ -1,5 +1,11 @@
 ﻿#!/bin/sh
 set -eu
 
-python manage.py migrate --noinput
-python manage.py send_daily_reports "$@"
+APP_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-python}"
+
+cd "$APP_DIR"
+mkdir -p logs data
+
+"$PYTHON_BIN" manage.py migrate --noinput
+"$PYTHON_BIN" manage.py send_daily_reports "$@"
