@@ -16,7 +16,7 @@ class EmailBuilderTests(SimpleTestCase):
         self.branch = BranchPerformance(
             branch_code=101,
             branch_name="Principal",
-            current_amount=Decimal("500"),
+            current_amount=Decimal("2776.53"),
             monthly_target=Decimal("400"),
             compliance_pct=Decimal("125"),
             meets_target=True,
@@ -47,6 +47,7 @@ class EmailBuilderTests(SimpleTestCase):
         self.assertIn("Top 3 del periodo", render.html)
         self.assertIn("Posicion en el ranking", render.html)
         self.assertIn("Cumplimiento", render.html)
+        self.assertIn("$2.776,53 MM", render.html)
         self.assertEqual(len(render.inline_images), 2)
 
     def test_management_email_includes_global_compliance_and_detail(self):
@@ -57,4 +58,5 @@ class EmailBuilderTests(SimpleTestCase):
         self.assertIn("Cumplimiento global", render.html)
         self.assertIn("Detalle por sucursal", render.html)
         self.assertIn("Meta global", render.html)
+        self.assertNotIn("Estado global:", render.html)
         self.assertEqual(len(render.inline_images), 2)

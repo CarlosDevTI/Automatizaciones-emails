@@ -23,12 +23,17 @@ class EmailRender:
     inline_images: list[InlineImage]
 
 
+def _format_colombian_number(value: Decimal) -> str:
+    raw = f"{value:,.2f}"
+    return raw.replace(",", "#").replace(".", ",").replace("#", ".")
+
+
 def format_currency(value: Decimal) -> str:
-    return f"${value:,.2f} MM"
+    return f"${_format_colombian_number(value)} MM"
 
 
 def format_percent(value: Decimal) -> str:
-    return f"{value:.2f}%"
+    return f"{_format_colombian_number(value)}%"
 
 
 def status_color(value: str) -> str:
@@ -166,8 +171,6 @@ def build_management_email(
             "top_three": build_top_three(branches),
             "chart_cid": chart_image.cid,
             "ranking_rows": build_ranking_rows(branches),
-            "global_status_label": "Meta global cumplida" if summary.total_current_amount >= summary.total_target_amount and summary.total_target_amount > 0 else "Meta global pendiente",
-            "global_status_color": "#1d7f4e" if summary.total_current_amount >= summary.total_target_amount and summary.total_target_amount > 0 else "#ba3b46",
         }
     )
 

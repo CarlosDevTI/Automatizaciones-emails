@@ -52,7 +52,7 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False) -> 
     raw_records = fetch_daily_placements()
     normalized_records = normalize_records(raw_records)
     if not normalized_records:
-        raise RuntimeError("Oracle no retorno registros para el reporte diario.")
+        raise RuntimeError("No se encontraron sucursales con meta valida para generar el reporte diario.")
 
     branches, summary = build_branch_performance(normalized_records)
     skipped_branches = 0

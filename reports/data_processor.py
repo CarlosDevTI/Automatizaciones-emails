@@ -89,6 +89,9 @@ def normalize_records(raw_records: Iterable[dict]) -> list[PlacementRecord]:
         current_amount = normalize_current_amount_to_millions(_coerce_decimal(row.get("current_amount", ZERO)))
         monthly_target = _coerce_decimal(row.get("monthly_target", ZERO))
 
+        if monthly_target <= ZERO:
+            continue
+
         if branch_code not in aggregated:
             aggregated[branch_code] = {
                 "branch_name": branch_name,

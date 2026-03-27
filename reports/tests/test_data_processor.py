@@ -8,6 +8,7 @@ from reports.data_processor import (
     normalize_current_amount_to_millions,
     normalize_records,
 )
+from reports.email_builder import format_currency
 
 
 class DataProcessorTests(SimpleTestCase):
@@ -27,6 +28,17 @@ class DataProcessorTests(SimpleTestCase):
         self.assertEqual(records[0].branch_code, 101)
         self.assertEqual(records[0].current_amount, Decimal("150.00"))
         self.assertEqual(records[0].monthly_target, Decimal("100.00"))
+
+    def test_normalize_records_skips_zero_target_branches(self):
+        records = normalize_records(
+            [
+                {"branch_code": 101, "branch_name": "Principal", "current_amount": Decimal("100000000"), "monthly_target": Decimal("0")},
+                {"branch_code": 102, "branch_name": "Popular", "current_amount": Decimal("75000000"), "monthly_target": Decimal("100")},
+            ]
+        )
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].branch_code, 102)
 
     def test_calculate_compliance_pct_handles_positive_negative_and_zero_target(self):
         self.assertEqual(calculate_compliance_pct(Decimal("115"), Decimal("100")), Decimal("115.00"))
@@ -66,3 +78,6 @@ class DataProcessorTests(SimpleTestCase):
         self.assertEqual(branches[0].compliance_pct, Decimal("63.09"))
         self.assertFalse(branches[0].meets_target)
         self.assertEqual(branches[0].status_label, "No cumple meta")
+
+    def test_format_currency_uses_colombian_thousands(self):
+        self.assertEqual(format_currency(Decimal("2776.53")), "$2.776,53 MM")
