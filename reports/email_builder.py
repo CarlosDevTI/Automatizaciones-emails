@@ -31,17 +31,8 @@ def format_percent(value: Decimal) -> str:
     return f"{value:.2f}%"
 
 
-def format_signed_percent(value: Decimal) -> str:
-    prefix = "+" if value > 0 else ""
-    return f"{prefix}{value:.2f}%"
-
-
-def variation_color(value: Decimal) -> str:
-    if value > 0:
-        return "#1d7f4e"
-    if value < 0:
-        return "#ba3b46"
-    return "#866d1b"
+def status_color(value: str) -> str:
+    return "#1d7f4e" if value == "Cumple meta" else "#ba3b46"
 
 
 def _logo_inline_image() -> InlineImage | None:
@@ -83,9 +74,10 @@ def build_ranking_rows(branches: list[BranchPerformance]) -> list[dict]:
                 "medal_html": TOP_MEDALS.get(branch.rank, ""),
                 "branch_name": branch.branch_name,
                 "current_amount": format_currency(branch.current_amount),
-                "previous_amount": format_currency(branch.previous_amount),
-                "variation": format_signed_percent(branch.variation_pct),
-                "variation_color": variation_color(branch.variation_pct),
+                "monthly_target": format_currency(branch.monthly_target),
+                "compliance_pct": format_percent(branch.compliance_pct),
+                "status_label": branch.status_label,
+                "status_color": branch.status_color,
                 "participation": format_percent(branch.participation_pct),
             }
         )
@@ -100,8 +92,9 @@ def build_top_three(branches: list[BranchPerformance]) -> list[dict]:
                 "medal_html": TOP_MEDALS.get(branch.rank, ""),
                 "branch_name": branch.branch_name,
                 "current_amount": format_currency(branch.current_amount),
-                "variation": format_signed_percent(branch.variation_pct),
-                "variation_color": variation_color(branch.variation_pct),
+                "compliance_pct": format_percent(branch.compliance_pct),
+                "status_label": branch.status_label,
+                "status_color": branch.status_color,
             }
         )
     return items
@@ -109,6 +102,7 @@ def build_top_three(branches: list[BranchPerformance]) -> list[dict]:
 
 def build_branch_email(
     branch: BranchPerformance,
+    branches: list[BranchPerformance],
     report_date,
     chart_png: bytes,
 ) -> EmailRender:
@@ -117,20 +111,23 @@ def build_branch_email(
 
     context = _base_context(
         report_date=report_date,
-        subtitle=f"Agencia {branch.branch_name}",
+        subtitle=f"Director de Agencia | {branch.branch_name}",
         logo_image=logo_image,
     )
     context.update(
         {
             "branch_name": branch.branch_name,
             "current_amount": format_currency(branch.current_amount),
-            "previous_amount": format_currency(branch.previous_amount),
-            "variation": format_signed_percent(branch.variation_pct),
-            "variation_color": variation_color(branch.variation_pct),
+            "monthly_target": format_currency(branch.monthly_target),
+            "compliance_pct": format_percent(branch.compliance_pct),
+            "status_label": branch.status_label,
+            "status_color": branch.status_color,
+            "rank_label": f"#{branch.rank} de {len(branches)}",
             "chart_cid": chart_image.cid,
-            "result_title": "Resultado del periodo",
+            "result_title": branch.status_label,
             "result_message": branch.motivational_message,
-            "result_color": variation_color(branch.variation_pct),
+            "result_color": branch.status_color,
+            "top_three": build_top_three(branches),
         }
     )
 
@@ -160,16 +157,16 @@ def build_management_email(
     context.update(
         {
             "summary_cards": [
-                {"label": "Total red actual", "value": format_currency(summary.total_current_amount), "tone": "primary", "note": "Monto total del periodo actual"},
-                {"label": "Total red anterior", "value": format_currency(summary.total_previous_amount), "tone": "default", "note": "Monto total del periodo anterior"},
-                {"label": "Sucursales", "value": str(summary.branch_count), "tone": "accent", "note": "Cantidad incluida en el reporte"},
-                {"label": "Promedio por sucursal", "value": format_currency(summary.average_current_amount), "tone": "default", "note": f"Variacion total: {format_signed_percent(summary.total_variation_pct)}"},
+                {"label": "Consolidado actual", "value": format_currency(summary.total_current_amount), "tone": "primary", "note": "Monto acumulado del mes actual"},
+                {"label": "Meta global", "value": format_currency(summary.total_target_amount), "tone": "default", "note": "Suma de metas mensuales"},
+                {"label": "Cumplimiento global", "value": format_percent(summary.global_compliance_pct), "tone": "accent", "note": f"Sucursales que cumplen: {summary.met_target_count}/{summary.branch_count}"},
+                {"label": "Promedio por sucursal", "value": format_currency(summary.average_current_amount), "tone": "default", "note": "Promedio de colocacion actual"},
             ],
             "top_three": build_top_three(branches),
             "chart_cid": chart_image.cid,
             "ranking_rows": build_ranking_rows(branches),
-            "network_variation": format_signed_percent(summary.total_variation_pct),
-            "network_variation_color": variation_color(summary.total_variation_pct),
+            "global_status_label": "Meta global cumplida" if summary.total_current_amount >= summary.total_target_amount and summary.total_target_amount > 0 else "Meta global pendiente",
+            "global_status_color": "#1d7f4e" if summary.total_current_amount >= summary.total_target_amount and summary.total_target_amount > 0 else "#ba3b46",
         }
     )
 

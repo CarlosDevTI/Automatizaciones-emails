@@ -1,6 +1,6 @@
 ﻿# Colocacion Diaria
 
-Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, calcular metricas mensuales por sucursal y enviar correos HTML automatizados a sucursales y gerencia.
+Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, medir cumplimiento de meta mensual por sucursal y enviar correos HTML automatizados a directores de agencia y gerencia.
 
 ## Arquitectura
 
@@ -34,22 +34,24 @@ El sistema espera que `SP_CONSULTADIARIACOLOCACION` retorne exactamente estas co
 
 - `K_SUCURS`
 - `MONTO_MES_ACTUAL`
-- `MONTO_MES_ANTERIOR`
+- `META_MENSUAL`
 
-La variacion porcentual se calcula en la aplicacion con:
+La aplicacion determina el nivel de cumplimiento con:
 
 ```text
-((MONTO_MES_ACTUAL - MONTO_MES_ANTERIOR) / MONTO_MES_ANTERIOR) * 100
+CUMPLE     = MONTO_MES_ACTUAL >= META_MENSUAL
+NO CUMPLE  = MONTO_MES_ACTUAL < META_MENSUAL
+AVANCE_%   = (MONTO_MES_ACTUAL / META_MENSUAL) * 100
 ```
 
-Si `MONTO_MES_ANTERIOR <= 0`, la variacion se muestra como `0.00%` en estado neutral.
+Si `META_MENSUAL <= 0`, el avance se muestra como `0.00%`.
 
 ## Modulos clave
 
-- `reports/oracle_client.py`: abre la conexion Oracle con `with`, ejecuta el SP y mapea las tres columnas del resultado.
-- `reports/data_processor.py`: calcula monto actual, monto anterior, variacion, ranking, participacion y resumen de red.
-- `reports/charts.py`: genera PNG livianos para comparativo por sucursal y consolidado de red.
-- `reports/email_builder.py`: arma un solo sistema de render para los correos usando templates reutilizables y `CID inline`.
+- `reports/oracle_client.py`: abre la conexion Oracle con `with`, ejecuta el SP y mapea monto actual y meta mensual.
+- `reports/data_processor.py`: calcula cumplimiento, ranking, participacion y resumen global.
+- `reports/charts.py`: genera PNG livianos para avance frente a meta por sucursal y consolidado de red.
+- `reports/email_builder.py`: arma el sistema de render para correos de director y gerencia usando templates reutilizables y `CID inline`.
 - `reports/mailer.py`: envia HTML usando el backend SMTP de Django.
 - `reports/management/commands/send_daily_reports.py`: comando orquestador listo para cron.
 - `reports/history_store.py`: queda fuera del runtime diario y pendiente de limpieza futura.

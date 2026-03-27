@@ -26,9 +26,9 @@ def _figure_to_png_bytes(fig) -> bytes:
 
 
 def generate_branch_comparison_chart(branch: BranchPerformance) -> bytes:
-    labels = ["Mes actual", "Mes anterior"]
-    values = [float(branch.current_amount), float(branch.previous_amount)]
-    colors = ["#2563a6", "#b8cee6"]
+    labels = ["Monto actual", "Meta mensual"]
+    values = [float(branch.current_amount), float(branch.monthly_target)]
+    colors = ["#2563a6", "#d9e3ef"]
 
     fig, ax = plt.subplots(figsize=(4.6, 3.0), facecolor="#ffffff")
     ax.set_facecolor("#ffffff")
@@ -40,7 +40,7 @@ def generate_branch_comparison_chart(branch: BranchPerformance) -> bytes:
     ax.spines["bottom"].set_color("#dce5ee")
     ax.tick_params(axis="x", labelsize=9, colors="#17324d")
     ax.tick_params(axis="y", labelsize=8, colors="#5c7389")
-    ax.set_title("Comparativo del periodo", fontsize=11, fontweight="bold", color="#17324d", pad=10)
+    ax.set_title("Avance frente a la meta", fontsize=11, fontweight="bold", color="#17324d", pad=10)
 
     for bar in bars:
         height = bar.get_height()
@@ -69,7 +69,7 @@ def generate_management_bar_chart(branches: list[BranchPerformance]) -> bytes:
     ordered = list(reversed(branches))
     labels = [branch.branch_name for branch in ordered]
     current_values = [float(branch.current_amount) for branch in ordered]
-    previous_values = [float(branch.previous_amount) for branch in ordered]
+    target_values = [float(branch.monthly_target) for branch in ordered]
     chart_height = min(max(4.6, len(labels) * 0.28), 7.2)
 
     fig, ax = plt.subplots(figsize=(5.4, chart_height), facecolor="#ffffff")
@@ -77,8 +77,8 @@ def generate_management_bar_chart(branches: list[BranchPerformance]) -> bytes:
     y_positions = np.arange(len(labels))
     bar_height = 0.34
 
-    ax.barh(y_positions - (bar_height / 2), current_values, bar_height, color="#2563a6", label="Mes actual")
-    ax.barh(y_positions + (bar_height / 2), previous_values, bar_height, color="#b8cee6", label="Mes anterior")
+    ax.barh(y_positions - (bar_height / 2), current_values, bar_height, color="#2563a6", label="Monto actual")
+    ax.barh(y_positions + (bar_height / 2), target_values, bar_height, color="#d9e3ef", label="Meta mensual")
 
     ax.xaxis.set_major_formatter(FuncFormatter(_money_axis))
     ax.set_yticks(y_positions)
@@ -88,6 +88,6 @@ def generate_management_bar_chart(branches: list[BranchPerformance]) -> bytes:
     ax.grid(axis="x", color="#dce5ee", linewidth=0.8)
     ax.set_axisbelow(True)
     ax.legend(frameon=False, fontsize=8, loc="lower right")
-    ax.set_title("Comparativo mensual por sucursal", fontsize=11, fontweight="bold", color="#17324d", pad=10)
+    ax.set_title("Cumplimiento de meta por sucursal", fontsize=11, fontweight="bold", color="#17324d", pad=10)
     fig.tight_layout()
     return _figure_to_png_bytes(fig)

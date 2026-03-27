@@ -1,5 +1,6 @@
 ﻿from datetime import date
 from pathlib import Path
+from decimal import Decimal
 
 from django.test import SimpleTestCase, override_settings
 
@@ -15,40 +16,45 @@ class EmailBuilderTests(SimpleTestCase):
         self.branch = BranchPerformance(
             branch_code=101,
             branch_name="Principal",
-            current_amount=500,
-            previous_amount=400,
-            variation_pct=25,
-            participation_pct=55,
+            current_amount=Decimal("500"),
+            monthly_target=Decimal("400"),
+            compliance_pct=Decimal("125"),
+            meets_target=True,
+            status_label="Cumple meta",
+            status_color="#1d7f4e",
+            participation_pct=Decimal("55"),
             rank=1,
-            motivational_message="El resultado del periodo es positivo.",
+            motivational_message="La sucursal cumple la meta mensual.",
         )
         self.summary = NetworkSummary(
-            total_current_amount=900,
-            total_previous_amount=700,
-            total_variation_pct=28.57,
-            average_current_amount=450,
+            total_current_amount=Decimal("900"),
+            total_target_amount=Decimal("700"),
+            global_compliance_pct=Decimal("128.57"),
+            average_current_amount=Decimal("450"),
             branch_count=2,
+            met_target_count=1,
         )
         self.branches = [
             self.branch,
-            BranchPerformance(102, "Popular", 400, 300, 33.33, 45, 2, "Buen resultado."),
+            BranchPerformance(102, "Popular", Decimal("400"), Decimal("500"), Decimal("80"), False, "No cumple meta", "#ba3b46", Decimal("45"), 2, "Aun no cumple la meta."),
         ]
 
-    def test_branch_email_uses_cid_logo_and_omits_ranking(self):
-        render = build_branch_email(self.branch, date(2026, 3, 24), b"fake-chart")
+    def test_branch_email_uses_cid_logo_and_includes_top_three_and_ranking_position(self):
+        render = build_branch_email(self.branch, self.branches, date(2026, 3, 27), b"fake-chart")
 
         self.assertIn("cid:company-logo", render.html)
         self.assertIn("cid:branch-chart-101", render.html)
-        self.assertNotIn("Detalle por sucursal", render.html)
-        self.assertNotIn("Top 3 del periodo", render.html)
+        self.assertIn("Top 3 del periodo", render.html)
+        self.assertIn("Posicion en el ranking", render.html)
+        self.assertIn("Cumplimiento", render.html)
         self.assertEqual(len(render.inline_images), 2)
 
-    def test_management_email_includes_summary_top_three_and_chart(self):
-        render = build_management_email(self.branches, self.summary, date(2026, 3, 24), b"fake-chart")
+    def test_management_email_includes_global_compliance_and_detail(self):
+        render = build_management_email(self.branches, self.summary, date(2026, 3, 27), b"fake-chart")
 
         self.assertIn("cid:company-logo", render.html)
         self.assertIn("cid:management-chart", render.html)
-        self.assertIn("Resumen general", render.html)
-        self.assertIn("Top 3 del periodo", render.html)
+        self.assertIn("Cumplimiento global", render.html)
         self.assertIn("Detalle por sucursal", render.html)
+        self.assertIn("Meta global", render.html)
         self.assertEqual(len(render.inline_images), 2)

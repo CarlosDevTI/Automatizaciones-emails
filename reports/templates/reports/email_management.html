@@ -1,7 +1,7 @@
 ﻿{% extends "reports/base_report.html" %}
 
 {% block content %}
-<div style="font-size:15px;line-height:1.6;color:#4f6478;margin-bottom:18px;">Resumen gerencial de la red con comparativo entre monto actual y monto anterior calculado desde el procedimiento.</div>
+<div style="font-size:15px;line-height:1.6;color:#4f6478;margin-bottom:18px;">Consolidado general de la red con seguimiento del nivel de cumplimiento frente a la meta mensual de cada sucursal.</div>
 
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 10px 0;">
   <tr>
@@ -14,15 +14,16 @@
   </tr>
 </table>
 
+<div style="font-size:13px;line-height:1.6;color:#4f6478;margin:0 0 14px 0;">Estado global: <span style="color:{{ global_status_color }};font-weight:700;">{{ global_status_label }}</span></div>
+
 <div style="font-size:20px;line-height:1.3;font-weight:700;color:#17324d;margin:18px 0 10px 0;">Top 3 del periodo</div>
 {% include "reports/components/top_three.html" %}
 
-<div style="font-size:20px;line-height:1.3;font-weight:700;color:#17324d;margin:22px 0 8px 0;">Resumen general</div>
-<div style="font-size:13px;line-height:1.6;color:#4f6478;margin-bottom:10px;">Variacion total de la red: <span style="color:{{ network_variation_color }};font-weight:700;">{{ network_variation }}</span></div>
+<div style="font-size:20px;line-height:1.3;font-weight:700;color:#17324d;margin:22px 0 8px 0;">Cumplimiento por sucursal</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 18px 0;">
   <tr>
     <td style="background-color:#ffffff;border:1px solid #dce5ee;border-radius:14px;padding:16px;">
-      <img src="cid:{{ chart_cid }}" alt="Grafica consolidada de la red" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">
+      <img src="cid:{{ chart_cid }}" alt="Grafica consolidada de cumplimiento de meta" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">
     </td>
   </tr>
 </table>

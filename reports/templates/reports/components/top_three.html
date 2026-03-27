@@ -8,7 +8,8 @@
             <div style="font-size:22px;line-height:1;margin-bottom:10px;">{{ item.medal_html|safe }}</div>
             <div style="font-size:17px;line-height:1.35;font-weight:700;color:#17324d;">{{ item.branch_name }}</div>
             <div style="font-size:20px;line-height:1.25;font-weight:700;color:#2563a6;margin-top:8px;">{{ item.current_amount }}</div>
-            <div style="font-size:13px;line-height:1.5;color:{{ item.variation_color }};font-weight:700;margin-top:8px;">{{ item.variation }}</div>
+            <div style="font-size:13px;line-height:1.5;color:#4f6478;margin-top:8px;">Avance: <span style="color:{{ item.status_color }};font-weight:700;">{{ item.compliance_pct }}</span></div>
+            <div style="font-size:13px;line-height:1.5;color:{{ item.status_color }};font-weight:700;margin-top:4px;">{{ item.status_label }}</div>
           </td>
         </tr>
       </table>

@@ -52,7 +52,7 @@ def _row_to_record(row: Sequence[Any]) -> dict[str, Any] | None:
         "branch_code": branch_code,
         "branch_name": BRANCH_CATALOG.get(branch_code, f"Sucursal {branch_code}"),
         "current_amount": _to_decimal(row[1] if len(row) > 1 else None),
-        "previous_amount": _to_decimal(row[2] if len(row) > 2 else None),
+        "monthly_target": _to_decimal(row[2] if len(row) > 2 else None),
     }
 
 

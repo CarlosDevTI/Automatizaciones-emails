@@ -80,6 +80,7 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False) -> 
 
         branch_render = build_branch_email(
             branch=branch,
+            branches=branches,
             report_date=target_date,
             chart_png=generate_branch_comparison_chart(branch),
         )
@@ -94,7 +95,7 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False) -> 
 
     if dry_run:
         logger.info(
-            "Dry run activo. Render completado para %s correo(s) de sucursal y %s correo gerencial.",
+            "Dry run activo. Render completado para %s correo(s) de director y %s correo gerencial.",
             len(branch_payloads),
             1 if management_payload.recipients else 0,
         )

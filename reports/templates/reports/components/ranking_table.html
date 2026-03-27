@@ -3,8 +3,9 @@
     <th align="left" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Pos.</th>
     <th align="left" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Sucursal</th>
     <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Actual</th>
-    <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Anterior</th>
-    <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Variacion</th>
+    <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Meta</th>
+    <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Avance</th>
+    <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Estado</th>
     <th align="right" style="padding:10px 8px;border-bottom:1px solid #dce5ee;font-size:12px;line-height:1.4;color:#63778b;">Part.</th>
   </tr>
   {% for row in ranking_rows %}
@@ -12,8 +13,9 @@
     <td style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;font-weight:700;color:#17324d;">{{ row.rank }} {% if row.medal_html %}<span>{{ row.medal_html|safe }}</span>{% endif %}</td>
     <td style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:#17324d;">{{ row.branch_name }}</td>
     <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:#17324d;">{{ row.current_amount }}</td>
-    <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:#17324d;">{{ row.previous_amount }}</td>
-    <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:{{ row.variation_color }};font-weight:700;">{{ row.variation }}</td>
+    <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:#17324d;">{{ row.monthly_target }}</td>
+    <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:#17324d;">{{ row.compliance_pct }}</td>
+    <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:{{ row.status_color }};font-weight:700;">{{ row.status_label }}</td>
     <td align="right" style="padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13px;line-height:1.4;color:#17324d;">{{ row.participation }}</td>
   </tr>
   {% endfor %}

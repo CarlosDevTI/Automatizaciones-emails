@@ -25,8 +25,8 @@ class ServicesTests(SimpleTestCase):
         open_email_connection,
     ):
         fetch_daily_placements.return_value = [
-            {"branch_code": 101, "branch_name": "Principal", "current_amount": 500, "previous_amount": 400},
-            {"branch_code": 102, "branch_name": "Popular", "current_amount": 200, "previous_amount": 250},
+            {"branch_code": 101, "branch_name": "Principal", "current_amount": 500, "monthly_target": 400},
+            {"branch_code": 102, "branch_name": "Popular", "current_amount": 200, "monthly_target": 250},
         ]
         get_chart_builders.return_value = (
             MagicMock(return_value=b"branch-chart"),
@@ -35,7 +35,7 @@ class ServicesTests(SimpleTestCase):
         build_management_email.return_value = MagicMock(html="<html>mgmt</html>", inline_images=[])
         build_branch_email.return_value = MagicMock(html="<html>branch</html>", inline_images=[])
 
-        summary = run_daily_report(report_date=date(2026, 3, 24), dry_run=True)
+        summary = run_daily_report(report_date=date(2026, 3, 27), dry_run=True)
 
         self.assertTrue(summary.dry_run)
         self.assertEqual(summary.sent_messages, 0)
@@ -52,7 +52,7 @@ class CommandTests(SimpleTestCase):
     @patch("reports.management.commands.send_daily_reports.run_daily_report")
     def test_management_command_supports_dry_run_without_preview_dir(self, run_daily_report_mock):
         run_daily_report_mock.return_value = ReportExecutionSummary(
-            report_date=date(2026, 3, 24),
+            report_date=date(2026, 3, 27),
             sent_messages=0,
             branch_messages=1,
             skipped_branches=0,
