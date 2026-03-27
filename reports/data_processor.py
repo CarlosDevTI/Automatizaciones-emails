@@ -6,6 +6,7 @@ from reports.constants import BRANCH_CATALOG
 
 TWO_PLACES = Decimal("0.01")
 ZERO = Decimal("0")
+ONE_MILLION = Decimal("1000000")
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,10 @@ def _coerce_decimal(value) -> Decimal:
     return Decimal(str(value))
 
 
+def normalize_current_amount_to_millions(value: Decimal) -> Decimal:
+    return _q(value / ONE_MILLION)
+
+
 def calculate_compliance_pct(current: Decimal, target: Decimal) -> Decimal:
     if target <= ZERO:
         return ZERO
@@ -81,7 +86,7 @@ def normalize_records(raw_records: Iterable[dict]) -> list[PlacementRecord]:
     for row in raw_records:
         branch_code = int(row["branch_code"])
         branch_name = row.get("branch_name") or BRANCH_CATALOG.get(branch_code, f"Sucursal {branch_code}")
-        current_amount = _coerce_decimal(row.get("current_amount", ZERO))
+        current_amount = normalize_current_amount_to_millions(_coerce_decimal(row.get("current_amount", ZERO)))
         monthly_target = _coerce_decimal(row.get("monthly_target", ZERO))
 
         if branch_code not in aggregated:

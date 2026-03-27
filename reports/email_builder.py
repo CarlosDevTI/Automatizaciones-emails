@@ -24,7 +24,7 @@ class EmailRender:
 
 
 def format_currency(value: Decimal) -> str:
-    return f"${value:,.2f}"
+    return f"${value:,.2f} MM"
 
 
 def format_percent(value: Decimal) -> str:
@@ -62,6 +62,7 @@ def _base_context(report_date, subtitle: str, logo_image: InlineImage | None) ->
         "report_date": report_date.strftime("%d/%m/%Y"),
         "logo_cid": logo_image.cid if logo_image else "",
         "logo_available": bool(logo_image),
+        "unit_note": "Valores expresados en millones",
     }
 
 
