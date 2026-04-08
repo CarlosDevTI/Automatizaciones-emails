@@ -12,12 +12,23 @@ def _clean_text(value: Any) -> str:
     return str(value).strip()
 
 
+def _normalize_name_parts(parts: Sequence[Any]) -> str:
+    cleaned_parts = [_clean_text(part) for part in parts if _clean_text(part)]
+    if not cleaned_parts:
+        return ""
+    return " ".join(cleaned_parts).title()
+
+
 def _row_to_birthday_record(row: Sequence[Any]) -> dict[str, str] | None:
     if not row:
         return None
 
-    name = _clean_text(row[0] if len(row) > 0 else None)
-    mail = _clean_text(row[1] if len(row) > 1 else None).lower()
+    if len(row) >= 5:
+        name = _normalize_name_parts(row[:4])
+        mail = _clean_text(row[4]).lower()
+    else:
+        name = _normalize_name_parts([row[0] if len(row) > 0 else None])
+        mail = _clean_text(row[1] if len(row) > 1 else None).lower()
 
     if not name and not mail:
         return None
