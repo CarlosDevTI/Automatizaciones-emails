@@ -1,0 +1,10 @@
+﻿Feliz cumpleanos, {{ name }}!
+
+Hoy celebramos tu dia.
+Gracias por formar parte de la familia ConGente.
+
+Deseamos que este nuevo ano de vida este lleno de alegria, bienestar y momentos especiales.
+
+Recibe un saludo cercano y nuestros mejores deseos.
+
+Cooperativa ConGente

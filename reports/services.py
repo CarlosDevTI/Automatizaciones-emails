@@ -1,16 +1,22 @@
-﻿import logging
+import logging
 from dataclasses import dataclass
 from datetime import date
 
 from django.conf import settings
 from django.utils import timezone
 
-from reports.data_processor import build_branch_performance, normalize_records
+from reports.data_processor import (
+    build_branch_performance,
+    normalize_records,
+    override_summary_totals,
+    summarize_raw_records,
+)
 from reports.email_builder import build_branch_email, build_management_email
 from reports.mailer import open_email_connection, send_html_email
 from reports.oracle_client import fetch_daily_placements
 
 logger = logging.getLogger(__name__)
+INVALID_RECIPIENT_MARKERS = {"null", "none"}
 
 
 @dataclass(frozen=True)
@@ -34,9 +40,19 @@ class EmailPayload:
 def _normalize_recipients(raw_value) -> list[str]:
     if not raw_value:
         return []
+
     if isinstance(raw_value, str):
-        return [email.strip() for email in raw_value.split(",") if email.strip()]
-    return [str(email).strip() for email in raw_value if str(email).strip()]
+        candidates = raw_value.split(",")
+    else:
+        candidates = raw_value
+
+    recipients = []
+    for candidate in candidates:
+        email = str(candidate).strip()
+        if not email or email.lower() in INVALID_RECIPIENT_MARKERS:
+            continue
+        recipients.append(email)
+    return recipients
 
 
 def _get_chart_builders():
@@ -50,11 +66,17 @@ def run_daily_report(report_date: date | None = None, dry_run: bool = False) -> 
 
     target_date = report_date or timezone.localdate()
     raw_records = fetch_daily_placements()
+    raw_total_current_amount, raw_total_target_amount = summarize_raw_records(raw_records)
     normalized_records = normalize_records(raw_records)
     if not normalized_records:
         raise RuntimeError("No se encontraron sucursales con meta valida para generar el reporte diario.")
 
     branches, summary = build_branch_performance(normalized_records)
+    summary = override_summary_totals(
+        summary,
+        total_current_amount=raw_total_current_amount,
+        total_target_amount=raw_total_target_amount,
+    )
     skipped_branches = 0
 
     management_render = build_management_email(

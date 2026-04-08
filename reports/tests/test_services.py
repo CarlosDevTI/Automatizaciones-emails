@@ -1,4 +1,5 @@
-﻿from datetime import date
+from datetime import date
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from django.core.management import call_command
@@ -7,7 +8,7 @@ from django.test import SimpleTestCase, override_settings
 from reports.services import ReportExecutionSummary, run_daily_report
 
 
-@override_settings(MANAGEMENT_RECIPIENTS=["coord@coop.test"], BRANCH_RECIPIENTS={101: ["principal@coop.test"]})
+@override_settings(MANAGEMENT_RECIPIENTS=["coord@coop.test", "NULL"], BRANCH_RECIPIENTS={101: ["principal@coop.test", "NULL"], 102: ["NULL"]})
 class ServicesTests(SimpleTestCase):
     @patch("reports.services.open_email_connection")
     @patch("reports.services.send_html_email")
@@ -25,8 +26,8 @@ class ServicesTests(SimpleTestCase):
         open_email_connection,
     ):
         fetch_daily_placements.return_value = [
-            {"branch_code": 101, "branch_name": "Principal", "current_amount": 500, "monthly_target": 400},
-            {"branch_code": 102, "branch_name": "Popular", "current_amount": 200, "monthly_target": 250},
+            {"branch_code": 101, "branch_name": "Principal", "current_amount": 500000000, "monthly_target": 400},
+            {"branch_code": 102, "branch_name": "Popular", "current_amount": 200000000, "monthly_target": 0},
         ]
         get_chart_builders.return_value = (
             MagicMock(return_value=b"branch-chart"),
@@ -40,10 +41,14 @@ class ServicesTests(SimpleTestCase):
         self.assertTrue(summary.dry_run)
         self.assertEqual(summary.sent_messages, 0)
         self.assertEqual(summary.branch_messages, 1)
-        self.assertEqual(summary.skipped_branches, 1)
+        self.assertEqual(summary.skipped_branches, 0)
         fetch_daily_placements.assert_called_once()
         build_management_email.assert_called_once()
         build_branch_email.assert_called_once()
+        summary_arg = build_management_email.call_args.kwargs["summary"]
+        self.assertEqual(summary_arg.total_current_amount, Decimal("700.00"))
+        self.assertEqual(summary_arg.total_target_amount, Decimal("400.00"))
+        self.assertEqual(summary_arg.global_compliance_pct, Decimal("175.00"))
         open_email_connection.assert_not_called()
         send_html_email.assert_not_called()
 

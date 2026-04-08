@@ -1,4 +1,4 @@
-﻿from dataclasses import dataclass
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
@@ -40,7 +40,7 @@ def status_color(value: str) -> str:
     return "#1d7f4e" if value == "Cumple meta" else "#ba3b46"
 
 
-def _logo_inline_image() -> InlineImage | None:
+def load_logo_inline_image() -> InlineImage | None:
     logo_path = Path(settings.REPORT_LOGO_PATH)
     if not logo_path.exists() or not logo_path.is_file():
         return None
@@ -112,7 +112,7 @@ def build_branch_email(
     report_date,
     chart_png: bytes,
 ) -> EmailRender:
-    logo_image = _logo_inline_image()
+    logo_image = load_logo_inline_image()
     chart_image = _png_inline_image(chart_png, cid=f"branch-chart-{branch.branch_code}", filename=f"branch-{branch.branch_code}.png")
 
     context = _base_context(
@@ -152,7 +152,7 @@ def build_management_email(
     report_date,
     chart_png: bytes,
 ) -> EmailRender:
-    logo_image = _logo_inline_image()
+    logo_image = load_logo_inline_image()
     chart_image = _png_inline_image(chart_png, cid="management-chart", filename="management-chart.png")
 
     context = _base_context(

@@ -1,0 +1,10 @@
+# Cron para correos de cumpleanos
+# Ajuste la ruta del proyecto y del Python del venv segun el servidor.
+# Si el servidor trabaja en UTC, convierta 7:05 a. m. America/Bogota a la hora equivalente del servidor.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ=America/Bogota
+
+# Ejecucion diaria a las 7:05 a. m. hora Colombia.
+5 12 * * * cd /home/sa/colocacion_diaria && PYTHON_BIN=/home/sa/colocacion_diaria/.venv/bin/python bash ./scripts/run_birthday_emails.sh >> /home/sa/colocacion_diaria/logs/birthday_cron.log 2>&1

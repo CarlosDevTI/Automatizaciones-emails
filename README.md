@@ -1,34 +1,43 @@
-﻿# Colocacion Diaria
+# Colocacion Diaria
 
-Proyecto Django para consultar `SP_CONSULTADIARIACOLOCACION` en Oracle, medir cumplimiento de meta mensual por sucursal y enviar correos HTML automatizados a directores de agencia y gerencia.
+Proyecto Django para automatizaciones batch por cron sobre Oracle y SMTP. Actualmente incluye:
+
+- colocacion diaria con `SP_CONSULTADIARIACOLOCACION`
+- cumpleanos de empleados con `SP_CUMPLEANOS`
 
 ## Arquitectura
 
 ```text
 .
-├── colocacion_diaria/
-│   ├── settings.py
-│   ├── urls.py
-│   ├── asgi.py
-│   └── wsgi.py
-├── reports/
-│   ├── oracle_client.py
-│   ├── data_processor.py
-│   ├── charts.py
-│   ├── email_builder.py
-│   ├── mailer.py
-│   ├── services.py
-│   ├── models.py
-│   ├── management/commands/send_daily_reports.py
-│   └── templates/reports/
-├── scripts/run_daily_reports.sh
-├── Dockerfile
-├── docker-compose.yml
-├── manage.py
-└── requirements.txt
++-- colocacion_diaria/
+�   +-- settings.py
+�   +-- urls.py
+�   +-- asgi.py
+�   +-- wsgi.py
++-- reports/
+�   +-- oracle_client.py
+�   +-- birthday_oracle_client.py
+�   +-- data_processor.py
+�   +-- charts.py
+�   +-- email_builder.py
+�   +-- birthday_email_builder.py
+�   +-- mailer.py
+�   +-- services.py
+�   +-- birthday_service.py
+�   +-- management/commands/send_daily_reports.py
+�   +-- management/commands/send_birthday_emails.py
+�   +-- templates/reports/
++-- scripts/run_daily_reports.sh
++-- scripts/run_birthday_emails.sh
++-- deploy/colocacion_diaria.cron
++-- deploy/birthday_emails.cron
++-- manage.py
++-- requirements.txt
 ```
 
-## Contrato del procedimiento
+## Oracle
+
+### Colocacion diaria
 
 El sistema espera que `SP_CONSULTADIARIACOLOCACION` retorne exactamente estas columnas:
 
@@ -36,119 +45,112 @@ El sistema espera que `SP_CONSULTADIARIACOLOCACION` retorne exactamente estas co
 - `MONTO_MES_ACTUAL`
 - `META_MENSUAL`
 
-La aplicacion determina el nivel de cumplimiento con:
+### Cumpleanos
 
-```text
-CUMPLE     = MONTO_MES_ACTUAL >= META_MENSUAL
-NO CUMPLE  = MONTO_MES_ACTUAL < META_MENSUAL
-AVANCE_%   = (MONTO_MES_ACTUAL / META_MENSUAL) * 100
-```
+El sistema espera que `SP_CUMPLEANOS` retorne exactamente estas columnas:
 
-Si `META_MENSUAL <= 0`, el avance se muestra como `0.00%`.
+- `NOMBRE`
+- `MAIL`
 
 ## Modulos clave
 
-- `reports/oracle_client.py`: abre la conexion Oracle con `with`, ejecuta el SP y mapea monto actual y meta mensual.
-- `reports/data_processor.py`: calcula cumplimiento, ranking, participacion y resumen global.
-- `reports/charts.py`: genera PNG livianos para avance frente a meta por sucursal y consolidado de red.
-- `reports/email_builder.py`: arma el sistema de render para correos de director y gerencia usando templates reutilizables y `CID inline`.
-- `reports/mailer.py`: envia HTML usando el backend SMTP de Django.
-- `reports/management/commands/send_daily_reports.py`: comando orquestador listo para cron.
-- `reports/history_store.py`: queda fuera del runtime diario y pendiente de limpieza futura.
+- `reports/oracle_client.py`: cliente Oracle para colocacion.
+- `reports/birthday_oracle_client.py`: cliente Oracle para cumpleanos.
+- `reports/email_builder.py`: render de correos de colocacion.
+- `reports/birthday_email_builder.py`: render HTML y texto plano para cumpleanos.
+- `reports/mailer.py`: envio SMTP reutilizable para ambos flujos.
+- `reports/services.py`: orquestacion batch de colocacion.
+- `reports/birthday_service.py`: orquestacion batch de cumpleanos.
+- `reports/management/commands/send_daily_reports.py`: comando de colocacion.
+- `reports/management/commands/send_birthday_emails.py`: comando de cumpleanos.
 
 ## Configuracion local
-
-1. Crear entorno virtual e instalar dependencias.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-En Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-2. Crear `.env` a partir de `.env.example`.
-
-```bash
 cp .env.example .env
-```
-
-3. Ejecutar migraciones locales.
-
-```bash
 python manage.py migrate
-```
-
-4. Probar calculos y render.
-
-```bash
 python manage.py test reports.tests
 ```
 
-5. Validar flujo completo sin enviar correo.
+## Uso
 
-```bash
-python manage.py send_daily_reports --dry-run
-```
+### Colocacion diaria
 
-6. Ejecutar envio real.
+Ejecucion normal:
 
 ```bash
 python manage.py send_daily_reports
 ```
 
-## Docker
-
-Construccion y prueba:
+Ejecucion de prueba:
 
 ```bash
-docker compose build
-docker compose run --rm app python manage.py migrate
-docker compose run --rm app python manage.py send_daily_reports --dry-run
+python manage.py send_daily_reports --dry-run
 ```
 
-Para envio real:
+### Cumpleanos
+
+Ejecucion normal:
 
 ```bash
-docker compose run --rm app python manage.py send_daily_reports
+python manage.py send_birthday_emails
+```
+
+Ejecucion de prueba:
+
+```bash
+python manage.py send_birthday_emails --dry-run
+```
+
+## Scripts batch
+
+Colocacion diaria:
+
+```bash
+bash ./scripts/run_daily_reports.sh
+```
+
+Cumpleanos:
+
+```bash
+bash ./scripts/run_birthday_emails.sh
 ```
 
 ## Cron en Linux
 
-Opcion nativa:
+### Colocacion diaria
 
-```cron
-0 8 * * * cd /opt/colocacion_diaria && /opt/colocacion_diaria/scripts/run_daily_reports.sh >> /opt/colocacion_diaria/logs/cron.log 2>&1
-```
-
-Opcion Docker:
-
-```cron
-0 8 * * * cd /opt/colocacion_diaria && docker compose run --rm app ./scripts/run_daily_reports.sh >> /opt/colocacion_diaria/logs/cron.log 2>&1
-```
-
-Archivo listo para instalar:
+Archivo:
 
 - `deploy/colocacion_diaria.cron`
 
-Para cargarlo en el servidor:
+### Cumpleanos
+
+Archivo:
+
+- `deploy/birthday_emails.cron`
+
+Ejemplo cumpleanos a las 7:05 a. m. hora Colombia:
+
+```cron
+CRON_TZ=America/Bogota
+5 7 * * * cd /home/sa/colocacion_diaria && PYTHON_BIN=/home/sa/colocacion_diaria/.venv/bin/python bash ./scripts/run_birthday_emails.sh >> /home/sa/colocacion_diaria/logs/birthday_cron.log 2>&1
+```
+
+Para instalar cualquier cron del proyecto:
 
 ```bash
-crontab deploy/colocacion_diaria.cron
+crontab deploy/birthday_emails.cron
 crontab -l
 ```
 
 ## Notas operativas
 
-- El logo corporativo se toma desde `assets/logo.png` y se adjunta inline por `CID`.
-- Las graficas se generan como PNG livianos con ancho compatible para email.
-- Los destinatarios por sucursal se configuran en `BRANCH_RECIPIENTS_JSON`.
-- El historico local queda sin uso en el envio diario y se mantiene solo por compatibilidad temporal.
-- El flujo soportado es `send_daily_reports` con `--dry-run` o envio real; no se generan previews HTML a disco.
+- El proyecto no requiere `runserver` ni contenedor permanente.
+- Los procesos se ejecutan por cron, envian correos y terminan.
+- Los valores `NULL` en destinatarios de colocacion se ignoran automaticamente.
+- En cumpleanos, los registros sin mail, con mail invalido o duplicados se omiten y se registran en logs.
+- El flujo de cumpleanos no falla si no hay registros para el dia.

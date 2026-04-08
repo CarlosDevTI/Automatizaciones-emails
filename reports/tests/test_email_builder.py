@@ -1,4 +1,4 @@
-﻿from datetime import date
+from datetime import date
 from pathlib import Path
 from decimal import Decimal
 
@@ -24,7 +24,7 @@ class EmailBuilderTests(SimpleTestCase):
             status_color="#1d7f4e",
             participation_pct=Decimal("55"),
             rank=1,
-            motivational_message="La sucursal cumple la meta mensual.",
+            motivational_message="La agencia Principal cumple la meta mensual.",
         )
         self.summary = NetworkSummary(
             total_current_amount=Decimal("900"),
@@ -36,7 +36,7 @@ class EmailBuilderTests(SimpleTestCase):
         )
         self.branches = [
             self.branch,
-            BranchPerformance(102, "Popular", Decimal("400"), Decimal("500"), Decimal("80"), False, "No cumple meta", "#ba3b46", Decimal("45"), 2, "Aun no cumple la meta."),
+            BranchPerformance(102, "Popular", Decimal("400"), Decimal("500"), Decimal("80"), False, "No cumple meta", "#ba3b46", Decimal("45"), 2, "La agencia Popular esta por debajo de la meta mensual."),
         ]
 
     def test_branch_email_uses_cid_logo_and_includes_top_three_and_ranking_position(self):
@@ -44,7 +44,7 @@ class EmailBuilderTests(SimpleTestCase):
 
         self.assertIn("cid:company-logo", render.html)
         self.assertIn("cid:branch-chart-101", render.html)
-        self.assertIn("Top 3 del periodo", render.html)
+        self.assertIn("Top 3 del mes", render.html)
         self.assertIn("Posicion en el ranking", render.html)
         self.assertIn("Cumplimiento", render.html)
         self.assertIn("$2.776,53 MM", render.html)
@@ -58,5 +58,6 @@ class EmailBuilderTests(SimpleTestCase):
         self.assertIn("Cumplimiento global", render.html)
         self.assertIn("Detalle por sucursal", render.html)
         self.assertIn("Meta global", render.html)
+        self.assertIn("Top 3 del mes", render.html)
         self.assertNotIn("Estado global:", render.html)
         self.assertEqual(len(render.inline_images), 2)
