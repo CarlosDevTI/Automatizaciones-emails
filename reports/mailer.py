@@ -8,6 +8,10 @@ from django.utils.html import strip_tags
 logger = logging.getLogger(__name__)
 
 
+def _safe_log_text(value: str) -> str:
+    return value.encode("ascii", "backslashreplace").decode("ascii")
+
+
 def open_email_connection(
     host: str | None = None,
     port: int | None = None,
@@ -64,5 +68,5 @@ def send_html_email(
     message.attach_alternative(html_body, "text/html")
     _attach_inline_images(message, inline_images or [])
     sent = message.send()
-    logger.info("Correo enviado a %s con asunto '%s'", recipients, subject)
+    logger.info("Correo enviado a %s con asunto '%s'", recipients, _safe_log_text(subject))
     return sent
