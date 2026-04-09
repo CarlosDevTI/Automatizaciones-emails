@@ -1,9 +1,9 @@
-﻿Feliz cumpleanos, {{ name }}!
+Feliz cumpleaños, {{ name }}!
 
-Hoy celebramos tu dia.
+Hoy celebramos tu día.
 Gracias por formar parte de la familia ConGente.
 
-Deseamos que este nuevo ano de vida este lleno de alegria, bienestar y momentos especiales.
+Deseamos que este nuevo año de vida esté lleno de alegría, bienestar y momentos especiales.
 
 Recibe un saludo cercano y nuestros mejores deseos.
 

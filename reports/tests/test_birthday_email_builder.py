@@ -20,6 +20,6 @@ class BirthdayEmailBuilderTests(SimpleTestCase):
         self.assertIn("Asociado Congente", render.html)
         self.assertNotIn("Desarrollado por Gerencia TI", render.html)
         self.assertIn("Ana Maria", render.text)
-        self.assertIn("Hoy celebramos tu dia", render.text)
+        self.assertIn("Hoy celebramos tu día", render.text)
         self.assertNotIn("Desarrollado por Gerencia TI", render.text)
         self.assertGreaterEqual(len(render.inline_images), 1)
